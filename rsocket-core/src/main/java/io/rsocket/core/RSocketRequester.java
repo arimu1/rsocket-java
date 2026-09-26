@@ -198,6 +198,7 @@ class RSocketRequester extends RequesterResponderSupport implements RSocket {
     }
 
     getDuplexConnection().sendErrorAndClose(new ConnectionErrorException("Disposed"));
+    tryTerminateAndCloseConnection(() -> new ConnectionErrorException("Disposed"));
   }
 
   @Override
@@ -308,10 +309,14 @@ class RSocketRequester extends RequesterResponderSupport implements RSocket {
   }
 
   private void tryTerminateOnKeepAlive(KeepAliveSupport.KeepAlive keepAlive) {
-    tryTerminate(
+    tryTerminateAndCloseConnection(
         () ->
             new ConnectionErrorException(
                 String.format("No keep-alive acks for %d ms", keepAlive.getTimeout().toMillis())));
+  }
+
+  private void tryTerminateAndCloseConnection(Supplier<Throwable> errorSupplier) {
+    tryTerminate(errorSupplier);
     getDuplexConnection().dispose();
   }
 
